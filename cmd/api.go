@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/pateason/todo-server/internal/constants"
 	"github.com/pateason/todo-server/internal/database"
-	"github.com/pateason/todo-server/internal/transport"
+	"github.com/pateason/todo-server/internal/router"
 )
 
 func main() {
@@ -18,5 +18,5 @@ func main() {
 	})
 
 	fmt.Println("Starting router")
-	transport.StartRouter()
+	router.StartRouter()
 }

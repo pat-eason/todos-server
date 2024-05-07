@@ -29,7 +29,7 @@ type TodoEntity struct {
 var ctx = context.Background()
 
 func RetrieveTodoEntities() ([]*TodoEntity, error) {
-	var output []*TodoEntity
+	output := make([]*TodoEntity, 0)
 
 	cursor, err := todoCollection.Find(ctx, bson.D{})
 	if err != nil {

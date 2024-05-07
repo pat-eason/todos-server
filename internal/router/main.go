@@ -1,8 +1,8 @@
-package transport
+package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/pateason/todo-server/internal/transport/routes"
+	"github.com/pateason/todo-server/internal/router/routes"
 )
 
 func StartRouter() {
