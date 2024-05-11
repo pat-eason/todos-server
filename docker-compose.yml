@@ -1,19 +1,19 @@
 name: "todo-server"
 services:
-#  api:
-#    build: .
-#    command:
-#      - ./bin/todo-server-linux
-#    ports:
-#      - 3001:8080
-#    environment:
-#      MONGO_PORT: 3002
-#      MONGO_HOST: mongo
-#      MONGO_USER: admin
-#      MONGO_PASS: password
-#      MONGO_DATABASE: todo-server
-#    depends_on:
-#      - mongo
+  api:
+    build: .
+    command:
+      - ./bin/todo-server-linux
+    ports:
+      - 3001:8080
+    environment:
+      MONGO_PORT: 3002
+      MONGO_HOST: mongo
+      MONGO_USER: admin
+      MONGO_PASS: password
+      MONGO_DATABASE: todo-server
+    depends_on:
+      - mongo
   mongo:
     image: mongo:7-jammy
     restart: always
