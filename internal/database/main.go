@@ -3,9 +3,10 @@ package database
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 type StartConfig struct {
@@ -16,7 +17,7 @@ type StartConfig struct {
 	Username string
 }
 
-var todoCollection *mongo.Collection
+var TodoCollection *mongo.Collection
 
 func generateMongoUri(host string, port string) string {
 	return fmt.Sprintf("mongodb://%s:%s/", host, port)
@@ -39,5 +40,5 @@ func StartDatabase(config *StartConfig) {
 		log.Fatal(err)
 	}
 
-	todoCollection = client.Database(config.Database).Collection("todos")
+	TodoCollection = client.Database(config.Database).Collection("todos")
 }

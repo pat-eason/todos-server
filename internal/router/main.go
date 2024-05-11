@@ -1,16 +1,24 @@
 package router
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/pateason/todo-server/internal/router/routes"
 )
 
 func StartRouter() {
 	router := gin.Default()
-	routes.AddRoutes(router)
+	addMiddleware(router)
+	addRoutes(router)
 	router.Run()
 }
 
-// @todo create auth middleware
+func addMiddleware(router *gin.Engine) {
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	router.Use(cors.New(corsConfig))
+}
 
-// @todo create validation middleware
+func addRoutes(router *gin.Engine) {
+	addGetPingRoute(router)
+	addTodoRouteGroup(router)
+}

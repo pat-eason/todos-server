@@ -1,21 +1,20 @@
-package routes
+package router
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/pateason/todo-server/internal/database"
-	"github.com/pateason/todo-server/internal/router/routes/utils"
-	"github.com/pateason/todo-server/internal/services"
 	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pateason/todo-server/internal/router/utils"
+	"github.com/pateason/todo-server/internal/services"
 )
 
 type RetrieveTodosRequestModel struct {
-	Date string `form:"date"`
+	Date *string `form:"date" binding:"omitempty,datetime=2006-01-02"`
 }
 
 type ManageTodoRequestModel struct {
-	Title   string   `json:"title" binding:"required"`
-	Content string   `json:"content" binding:"required"`
-	Tags    []string `json:"tags" binding:"required"`
+	Title string `json:"title" binding:"required,max=2"`
 }
 
 type SetTodoStatusRequestModel struct {
@@ -33,11 +32,24 @@ func addTodoRouteGroup(router *gin.Engine) {
 }
 
 func addRetrieveTodosRoute(routeGroup *gin.RouterGroup) {
-	routeGroup.GET("/", func(context *gin.Context) {
+	routeGroup.GET("", func(context *gin.Context) {
 		var queryParams RetrieveTodosRequestModel
-		utils.ValidateQueryParams(&queryParams, context)
+		err := utils.ValidateQueryParams(&queryParams, context)
+		if err != nil {
+			return
+		}
 
-		records, err := services.RetrieveTodos(services.RetrieveTodosModel{})
+		var queryDate *time.Time
+		if queryParams.Date != nil {
+			convertedDate, err := time.Parse("2006-01-02", *queryParams.Date)
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, err)
+				return
+			}
+			queryDate = &convertedDate
+		}
+
+		records, err := services.RetrieveTodos(services.RetrieveTodosModel{Date: queryDate})
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, err)
 			return
@@ -48,10 +60,10 @@ func addRetrieveTodosRoute(routeGroup *gin.RouterGroup) {
 }
 
 func addRetrieveTodoRoute(routeGroup *gin.RouterGroup) {
-	routeGroup.GET("/:todoId", func(context *gin.Context) {
+	routeGroup.GET(":todoId", func(context *gin.Context) {
 		todoId := context.Param("todoId")
 
-		record, err := database.RetrieveTodoEntity(todoId)
+		record, err := services.RetrieveTodo(todoId)
 		if err != nil {
 			context.JSON(http.StatusNotFound, err)
 			return
@@ -62,13 +74,15 @@ func addRetrieveTodoRoute(routeGroup *gin.RouterGroup) {
 }
 
 func addCreateTodoRoute(routeGroup *gin.RouterGroup) {
-	routeGroup.PUT("/", func(context *gin.Context) {
+	routeGroup.PUT("", func(context *gin.Context) {
 		var payload ManageTodoRequestModel
-		utils.ValidateJSONBody(&payload, context)
+		err := utils.ValidateJSONBody(&payload, context)
+		if err != nil {
+			return
+		}
 
 		record, err := services.CreateTodo(services.CreateTodoModel{
-			Title:   payload.Title,
-			Content: payload.Content,
+			Title: payload.Title,
 		})
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, err)
@@ -80,9 +94,12 @@ func addCreateTodoRoute(routeGroup *gin.RouterGroup) {
 }
 
 func addUpdateTodoRoute(routeGroup *gin.RouterGroup) {
-	routeGroup.POST("/:todoId", func(context *gin.Context) {
+	routeGroup.POST(":todoId", func(context *gin.Context) {
 		var payload ManageTodoRequestModel
-		utils.ValidateJSONBody(&payload, context)
+		err := utils.ValidateJSONBody(&payload, context)
+		if err != nil {
+			return
+		}
 
 		//todoId := context.Param("todoId")
 
@@ -93,29 +110,40 @@ func addUpdateTodoRoute(routeGroup *gin.RouterGroup) {
 }
 
 func addSetTodoStatusRoute(routeGroup *gin.RouterGroup) {
-	routeGroup.POST("/:todoId/status", func(context *gin.Context) {
+	routeGroup.POST(":todoId/status", func(context *gin.Context) {
 		var payload SetTodoStatusRequestModel
-		utils.ValidateJSONBody(&payload, context)
+		err := utils.ValidateJSONBody(&payload, context)
+		if err != nil {
+			return
+		}
 
-		//todoId := context.Param("todoId")
-
-		// @TODO set the record status flag
-
-		context.JSON(http.StatusOK, payload)
-	})
-}
-
-func addDeleteTodoRoute(routeGroup *gin.RouterGroup) {
-	routeGroup.DELETE("/:todoId", func(context *gin.Context) {
 		todoId := context.Param("todoId")
-
-		_, err := database.RetrieveTodoEntity(todoId)
+		_, err = services.RetrieveTodo(todoId)
 		if err != nil {
 			context.JSON(http.StatusNotFound, err)
 			return
 		}
 
-		err = database.DeleteTodoEntity(todoId)
+		record, err := services.UpdateTodoStatus(todoId, payload.IsActive)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, err)
+		}
+
+		context.JSON(http.StatusOK, record)
+	})
+}
+
+func addDeleteTodoRoute(routeGroup *gin.RouterGroup) {
+	routeGroup.DELETE(":todoId", func(context *gin.Context) {
+		todoId := context.Param("todoId")
+
+		_, err := services.RetrieveTodo(todoId)
+		if err != nil {
+			context.JSON(http.StatusNotFound, err)
+			return
+		}
+
+		err = services.DeleteTodo(todoId)
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, err)
 			return

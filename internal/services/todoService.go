@@ -1,37 +1,45 @@
 package services
 
 import (
-	"github.com/pateason/todo-server/internal/database"
 	"time"
+
+	"github.com/pateason/todo-server/internal/database/entities"
+	"github.com/pateason/todo-server/internal/repositories"
 )
 
 type RetrieveTodosModel struct {
-	Date time.Time
+	Date *time.Time
 }
 
 type CreateTodoModel struct {
-	Title   string
-	Content string
+	Title string
 }
 
-func RetrieveTodos(model RetrieveTodosModel) ([]*database.TodoEntity, error) {
-	entities, err := database.RetrieveTodoEntities()
+func RetrieveTodos(model RetrieveTodosModel) ([]*entities.TodoEntity, error) {
+	var searchDate time.Time
+	if model.Date == nil {
+		searchDate = time.Now()
+	} else {
+		searchDate = *model.Date
+	}
+
+	entities, err := repositories.RetrieveTodoEntitiesByDate(searchDate)
 	if err != nil {
 		return nil, err
 	}
 	return entities, nil
 }
 
-func RetrieveTodo(id string) (*database.TodoEntity, error) {
-	entity, err := database.RetrieveTodoEntity(id)
+func RetrieveTodo(id string) (*entities.TodoEntity, error) {
+	entity, err := repositories.RetrieveTodoEntity(id)
 	if err != nil {
 		return nil, err
 	}
 	return entity, nil
 }
 
-func CreateTodo(model CreateTodoModel) (*database.TodoEntity, error) {
-	entity, err := database.CreateTodoEntity(model.Title, model.Content)
+func CreateTodo(model CreateTodoModel) (*entities.TodoEntity, error) {
+	entity, err := repositories.CreateTodoEntity(model.Title)
 	if err != nil {
 		return nil, err
 	}
@@ -39,9 +47,17 @@ func CreateTodo(model CreateTodoModel) (*database.TodoEntity, error) {
 }
 
 func DeleteTodo(id string) error {
-	err := database.DeleteTodoEntity(id)
+	err := repositories.DeleteTodoEntity(id)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func UpdateTodoStatus(id string, isActive bool) (*entities.TodoEntity, error) {
+	record, err := repositories.UpdateTodoEntityStatus(id, isActive)
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
 }
